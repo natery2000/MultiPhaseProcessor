@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MultiPhaseProcessor
+namespace Natery.MultiPhaseProcessor
 {
-
     public class Processor<TInput>
     {
         internal IHeadProcessee<TInput> _head;

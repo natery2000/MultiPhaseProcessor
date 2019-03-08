@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MultiPhaseProcessor.Test
+namespace Natery.MultiPhaseProcessor.Test
 {
     [TestClass]
     public class Test_Processor
