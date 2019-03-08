@@ -8,9 +8,9 @@ namespace MultiPhaseProcessor
     {
         internal IProcessee<TOutput> _next;
         internal Queue<TInput> _queue;
-        internal Func<TInput, TOutput> _action;
+        internal Func<TInput, Task<TOutput>> _action;
 
-        public HeadProcessee(Func<TInput, TOutput> action)
+        public HeadProcessee(Func<TInput, Task<TOutput>> action)
         {
             _queue = new Queue<TInput>();
             _action = action;
@@ -21,17 +21,22 @@ namespace MultiPhaseProcessor
             AddWorkItem(data);
         }
 
-        public void BeginProcessing()
+        public async Task BeginProcessingAsync()
         {
-            Task.Run(() => _next.BeginProcessing());
+            var nextProcessing = _next.BeginProcessingAsync();
 
+            var currentProcessing = Executor();
+
+            await Task.WhenAll(nextProcessing, currentProcessing);
+        }
+
+        private async Task Executor()
+        {
             while (_queue.Count > 0)
             {
-                var input = _queue.Dequeue();
-                var output = _action(input);
+                var output = await _action(_queue.Dequeue());
                 _next.AddWorkItem(output);
             }
-
             _next.NoMoreWorkToAdd();
         }
 
@@ -54,6 +59,6 @@ namespace MultiPhaseProcessor
     public interface IHeadProcessee<TInput> : IProcessee
     {
         void AddWorkItem(TInput workItem);
-        void BeginProcessing();
+        Task BeginProcessingAsync();
     }
 }

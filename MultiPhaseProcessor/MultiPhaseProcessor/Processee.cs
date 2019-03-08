@@ -9,26 +9,36 @@ namespace MultiPhaseProcessor
         internal IProcessee<TOutput> _next;
         internal Queue<TInput> _queue;
         internal bool _moreWorkToAdd;
-        internal Func<TInput, TOutput> _action;
+        internal Func<TInput, Task<TOutput>> _action;
 
-        public Processee(Func<TInput, TOutput> action)
+        public Processee(Func<TInput, Task<TOutput>> action)
         {
             _queue = new Queue<TInput>();
-            _moreWorkToAdd = false;
+            _moreWorkToAdd = true;
             _action = action;
         }
 
-        void IProcessee<TInput>.BeginProcessing()
+        async Task IProcessee<TInput>.BeginProcessingAsync()
         {
-            Task.Run(() => _next.BeginProcessing());
+            var nextProcessing = _next.BeginProcessingAsync();
+            
+            var currentProcessing = Executor();
+            
+            await Task.WhenAll(nextProcessing, currentProcessing);
+        }
 
+        private async Task Executor()
+        {
             while (_queue.Count > 0 || _moreWorkToAdd)
             {
-                var input = _queue.Dequeue();
-                var output = _action(input);
-                _next.AddWorkItem(output);
+                if (_queue.Count > 0)
+                {
+                    var output = await _action(_queue.Dequeue());
+                    _next.AddWorkItem(output);
+                }
+                else
+                    await Task.Delay(100);
             }
-
             _next.NoMoreWorkToAdd();
         }
 
