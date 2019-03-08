@@ -1,7 +1,16 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>{version}</Version>
+    <Authors>Nathan Werry</Authors>
+    <Company />
+    <Description>A library for multi phase processing</Description>
+    <Copyright>Copyright 2019 Nathan Werry</Copyright>
+    <AssemblyVersion>{version}</AssemblyVersion>
+    <FileVersion>{version}</FileVersion>
+    <PackageProjectUrl>https://github.com/natery2000/MultiPhaseProcessor</PackageProjectUrl>
+    <PackageTags>MultiPhaseProcessor</PackageTags>
   </PropertyGroup>
 
 </Project>
