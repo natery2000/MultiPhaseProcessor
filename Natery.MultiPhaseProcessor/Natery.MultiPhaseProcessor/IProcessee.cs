@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace MultiPhaseProcessor
+namespace Natery.MultiPhaseProcessor
 {
     public interface IProcessee<TInput, TOutput> : IProcessee<TInput>
     {

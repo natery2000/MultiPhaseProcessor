@@ -2,59 +2,63 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace MultiPhaseProcessor
+namespace Natery.MultiPhaseProcessor
 {
-    public class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>
+    public class HeadProcessee<TInput, TOutput> : IHeadProcessee<TInput>, IProcessee<TInput, TOutput>
     {
         internal IProcessee<TOutput> _next;
         internal Queue<TInput> _queue;
-        internal bool _moreWorkToAdd;
         internal Func<TInput, Task<TOutput>> _action;
 
-        public Processee(Func<TInput, Task<TOutput>> action)
+        public HeadProcessee(Func<TInput, Task<TOutput>> action)
         {
             _queue = new Queue<TInput>();
-            _moreWorkToAdd = true;
             _action = action;
         }
 
-        async Task IProcessee<TInput>.BeginProcessingAsync()
+        public void AddData(TInput data)
+        {
+            AddWorkItem(data);
+        }
+
+        public async Task BeginProcessingAsync()
         {
             var nextProcessing = _next.BeginProcessingAsync();
-            
+
             var currentProcessing = Executor();
-            
+
             await Task.WhenAll(nextProcessing, currentProcessing);
         }
 
         private async Task Executor()
         {
-            while (_queue.Count > 0 || _moreWorkToAdd)
+            while (_queue.Count > 0)
             {
-                if (_queue.Count > 0)
-                {
-                    var output = await _action(_queue.Dequeue());
-                    _next.AddWorkItem(output);
-                }
-                else
-                    await Task.Delay(100);
+                var output = await _action(_queue.Dequeue());
+                _next.AddWorkItem(output);
             }
             _next.NoMoreWorkToAdd();
         }
 
-        void IProcessee<TInput>.AddWorkItem(TInput workItem)
+        public void AddWorkItem(TInput workItem)
         {
             _queue.Enqueue(workItem);
         }
 
         public void NoMoreWorkToAdd()
         {
-            _moreWorkToAdd = false;
+            throw new NotImplementedException();
         }
 
-        void IProcessee.AddNext(IProcessee processee)
+        public void AddNext(IProcessee processee)
         {
             _next = (IProcessee<TOutput>)processee;
         }
+    }
+
+    public interface IHeadProcessee<TInput> : IProcessee
+    {
+        void AddWorkItem(TInput workItem);
+        Task BeginProcessingAsync();
     }
 }

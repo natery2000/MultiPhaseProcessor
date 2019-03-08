@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\MultiPhaseProcessor\MultiPhaseProcessor.csproj" />
+    <ProjectReference Include="..\Natery.MultiPhaseProcessor\Natery.MultiPhaseProcessor.csproj" />
   </ItemGroup>
 
 </Project>
