@@ -9,7 +9,7 @@ namespace Natery.MultiPhaseProcessor.Test
     public class Test_Processor
     {
         [TestMethod]
-        public async Task TestMethod1Async()
+        public async Task Processor_OutOfOrderDueToDelay_Observed()
         {
             var processor = new Processor<int>();
 
@@ -44,6 +44,15 @@ namespace Natery.MultiPhaseProcessor.Test
             await processor.BeginAsync();
 
             CollectionAssert.AreEqual(new int[] { 10, 20, 30, 11, 12, 21, 31, 22, 32 }, list);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(Exception))]
+        public void Proccessor_AddNullHead_Exception()
+        {
+            var p = new Processor<int>();
+            p.WithHeadProcessee(new HeadProcessee<int, int>((int i) => Task.FromResult(1)));
+            p.WithHeadProcessee(new HeadProcessee<int, int>((int i) => Task.FromResult(1)));
         }
     }
 }

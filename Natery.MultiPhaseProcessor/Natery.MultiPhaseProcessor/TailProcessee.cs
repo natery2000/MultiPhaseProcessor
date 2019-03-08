@@ -17,7 +17,12 @@ namespace Natery.MultiPhaseProcessor
             _action = action;
         }
 
-        async Task IProcessee<TInput>.BeginProcessingAsync()
+        public async Task BeginProcessingAsync()
+        {
+            await Executor();
+        }
+
+        private async Task Executor()
         {
             while (_queue.Count > 0 || _moreWorkToAdd)
             {
@@ -28,21 +33,14 @@ namespace Natery.MultiPhaseProcessor
             }
         }
 
-        void IProcessee<TInput>.AddWorkItem(TInput workItem)
+        public void AddWorkItem(TInput workItem)
         {
             _queue.Enqueue(workItem);
         }
 
-        void IProcessee<TInput>.NoMoreWorkToAdd()
+        public void NoMoreWorkToAdd()
         {
             _moreWorkToAdd = false;
         }
-
-        public void AddNext(IProcessee processee)
-        {
-            throw new NotImplementedException();
-        }
     }
-
-    public interface ITailProcessee : IProcessee { }
 }

@@ -16,11 +16,6 @@ namespace Natery.MultiPhaseProcessor
             _action = action;
         }
 
-        public void AddData(TInput data)
-        {
-            AddWorkItem(data);
-        }
-
         public async Task BeginProcessingAsync()
         {
             var nextProcessing = _next.BeginProcessingAsync();
@@ -37,7 +32,7 @@ namespace Natery.MultiPhaseProcessor
                 var output = await _action(_queue.Dequeue());
                 _next.AddWorkItem(output);
             }
-            _next.NoMoreWorkToAdd();
+            ((INonHeadProcessee)_next).NoMoreWorkToAdd();
         }
 
         public void AddWorkItem(TInput workItem)
@@ -45,20 +40,9 @@ namespace Natery.MultiPhaseProcessor
             _queue.Enqueue(workItem);
         }
 
-        public void NoMoreWorkToAdd()
-        {
-            throw new NotImplementedException();
-        }
-
-        public void AddNext(IProcessee processee)
+        public void AddNext(INonHeadProcessee processee)
         {
             _next = (IProcessee<TOutput>)processee;
         }
-    }
-
-    public interface IHeadProcessee<TInput> : IProcessee
-    {
-        void AddWorkItem(TInput workItem);
-        Task BeginProcessingAsync();
     }
 }
