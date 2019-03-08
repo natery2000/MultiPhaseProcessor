@@ -6,15 +6,29 @@ namespace Natery.MultiPhaseProcessor
     {
     }
 
-    public interface IProcessee<TInput> : IProcessee
+    public interface IProcessee<TInput>
     {
         Task BeginProcessingAsync();
         void AddWorkItem(TInput workItem);
+    }
+
+    public interface INonHeadProcessee
+    {
         void NoMoreWorkToAdd();
     }
 
-    public interface IProcessee
+    public interface IProcesseeWithNext<TInput> : IProcesseeWithNext, IProcessee<TInput>
     {
-        void AddNext(IProcessee processee);
     }
+
+    public interface IProcesseeWithNext
+    {
+        void AddNext(INonHeadProcessee processee);
+    }
+
+    public interface IHeadProcessee<TInput> : IProcesseeWithNext<TInput>
+    {
+    }
+
+    public interface ITailProcessee : INonHeadProcessee { }
 }

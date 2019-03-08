@@ -8,7 +8,7 @@ namespace Natery.MultiPhaseProcessor
     {
         internal IHeadProcessee<TInput> _head;
         internal ITailProcessee _tail;
-        internal IProcessee _lastAdded;
+        internal IProcesseeWithNext _lastAdded;
 
         public Processor() { }
 
@@ -22,10 +22,10 @@ namespace Natery.MultiPhaseProcessor
             return this;
         }
 
-        public Processor<TInput> WithProcessee(IProcessee processee)
+        public Processor<TInput> WithProcessee(INonHeadProcessee processee)
         {
             _lastAdded.AddNext(processee);
-            _lastAdded = processee;
+            _lastAdded = (IProcesseeWithNext)processee;
 
             return this;
         }

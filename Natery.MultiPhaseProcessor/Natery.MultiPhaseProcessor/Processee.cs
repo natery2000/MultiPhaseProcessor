@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Natery.MultiPhaseProcessor
 {
-    public class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>
+    public class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>, IProcesseeWithNext<TInput>, INonHeadProcessee
     {
         internal IProcessee<TOutput> _next;
         internal Queue<TInput> _queue;
@@ -18,7 +18,7 @@ namespace Natery.MultiPhaseProcessor
             _action = action;
         }
 
-        async Task IProcessee<TInput>.BeginProcessingAsync()
+        public async Task BeginProcessingAsync()
         {
             var nextProcessing = _next.BeginProcessingAsync();
             
@@ -39,10 +39,10 @@ namespace Natery.MultiPhaseProcessor
                 else
                     await Task.Delay(100);
             }
-            _next.NoMoreWorkToAdd();
+            ((INonHeadProcessee)_next).NoMoreWorkToAdd();
         }
 
-        void IProcessee<TInput>.AddWorkItem(TInput workItem)
+        public void AddWorkItem(TInput workItem)
         {
             _queue.Enqueue(workItem);
         }
@@ -52,7 +52,7 @@ namespace Natery.MultiPhaseProcessor
             _moreWorkToAdd = false;
         }
 
-        void IProcessee.AddNext(IProcessee processee)
+        public void AddNext(INonHeadProcessee processee)
         {
             _next = (IProcessee<TOutput>)processee;
         }
