@@ -1,4 +1,6 @@
-﻿namespace MultiPhaseProcessor
+﻿using System.Threading.Tasks;
+
+namespace MultiPhaseProcessor
 {
     public interface IProcessee<TInput, TOutput> : IProcessee<TInput>
     {
@@ -6,7 +8,7 @@
 
     public interface IProcessee<TInput> : IProcessee
     {
-        void BeginProcessing();
+        Task BeginProcessingAsync();
         void AddWorkItem(TInput workItem);
         void NoMoreWorkToAdd();
     }

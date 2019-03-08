@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace MultiPhaseProcessor
 {
@@ -48,9 +49,9 @@ namespace MultiPhaseProcessor
             foreach (var workItem in workItems) AddWorkItem(workItem);
         }
 
-        public void Begin()
+        public async Task BeginAsync()
         {
-            _head.BeginProcessing();
+            await _head.BeginProcessingAsync();
         }
     }
 }

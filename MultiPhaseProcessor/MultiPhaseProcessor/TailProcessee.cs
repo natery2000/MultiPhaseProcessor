@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace MultiPhaseProcessor
 {
@@ -7,21 +9,23 @@ namespace MultiPhaseProcessor
     {
         internal Queue<TInput> _queue;
         internal bool _moreWorkToAdd;
-        internal Action<TInput> _action;
+        internal Func<TInput, Task> _action;
 
-        public TailProcessee(Action<TInput> action)
+        public TailProcessee(Func<TInput, Task> action)
         {
             _queue = new Queue<TInput>();
-            _moreWorkToAdd = false;
+            _moreWorkToAdd = true;
             _action = action;
         }
 
-        void IProcessee<TInput>.BeginProcessing()
+        async Task IProcessee<TInput>.BeginProcessingAsync()
         {
             while (_queue.Count > 0 || _moreWorkToAdd)
             {
-                var input = _queue.Dequeue();
-                _action(input);
+                if (_queue.Count > 0)
+                    await _action(_queue.Dequeue());
+                else
+                    await Task.Delay(100);
             }
         }
 
