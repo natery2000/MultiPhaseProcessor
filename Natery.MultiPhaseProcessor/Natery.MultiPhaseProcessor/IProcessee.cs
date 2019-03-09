@@ -8,8 +8,8 @@ namespace Natery.MultiPhaseProcessor
 
     public interface IProcessee<TInput>
     {
-        Task BeginProcessingAsync();
         void AddWorkItem(TInput workItem);
+        Task BeginProcessingAsync();
     }
 
     public interface INonHeadProcessee

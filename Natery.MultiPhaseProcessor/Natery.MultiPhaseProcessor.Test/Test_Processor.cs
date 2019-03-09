@@ -1,6 +1,8 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Natery.MultiPhaseProcessor.Test
@@ -9,41 +11,40 @@ namespace Natery.MultiPhaseProcessor.Test
     public class Test_Processor
     {
         [TestMethod]
-        public async Task Processor_OutOfOrderDueToDelay_Observed()
+        public async Task Processor_FullData_Processees_Works()
         {
-            var processor = new Processor<int>();
+            var processor = new Processor<string>();
 
-            var list = new List<int>();
+            var list = new List<string>();
 
-            Func<int, Task<int>> first = async (i) =>
+            Func<string, Task<string>> first = async (i) =>
             {
                 list.Add(i);
-                return await Task.FromResult(i + 1);
+                return await Task.FromResult((int.Parse(i) + 1).ToString());
             };
 
-            Func<int, Task<int>> second = async (i) =>
+            Func<string, Task<string>> second = async (i) =>
             {
-                if (i == 21) await Task.Delay(1000);
                 list.Add(i);
-                return await Task.FromResult(i + 1);
+                return await Task.FromResult((int.Parse(i) + 1).ToString());
             };
 
-            Func<int, Task> third = (i) =>
+            Func<string, Task> third = (i) =>
             {
                 list.Add(i);
                 return Task.CompletedTask;
             };
 
             processor
-                .WithHeadProcessee(new HeadProcessee<int, int>(first))
-                .WithProcessee(new Processee<int, int>(second))
-                .WithTailProcessee(new TailProcessee<int>(third));
+                .WithHeadProcessee(new HeadProcessee<string, string>(first))
+                .WithProcessee(new Processee<string, string>(second))
+                .WithTailProcessee(new TailProcessee<string>(third));
 
-            processor.AddWorkItems(new[] { 10, 20, 30 });
+            processor.AddWorkItems(new[] { "10", "20", "30" });
 
             await processor.BeginAsync();
 
-            CollectionAssert.AreEqual(new int[] { 10, 20, 30, 11, 12, 21, 31, 22, 32 }, list);
+            CollectionAssert.AreEqual(new string[] { "10", "20", "30", "11", "21", "31", "12", "22", "32" }, list);
         }
 
         [TestMethod]
@@ -53,6 +54,31 @@ namespace Natery.MultiPhaseProcessor.Test
             var p = new Processor<int>();
             p.WithHeadProcessee(new HeadProcessee<int, int>((int i) => Task.FromResult(1)));
             p.WithHeadProcessee(new HeadProcessee<int, int>((int i) => Task.FromResult(1)));
+        }
+
+        //#14: Value types fail because of 'default' keyword for queue usage
+        [Ignore]
+        [TestMethod]
+        public void Processor_ValueTypesAsync()
+        {
+            var condition = false;
+
+            (new Thread(async () => await TestFunction())).Start();
+
+            SpinWait.SpinUntil(() => condition, 1000);
+
+            Assert.IsTrue(condition);
+
+            async Task TestFunction()
+            {
+                var p = new Processor<int>();
+                p.WithHeadProcessee(new HeadProcessee<int, int>((i) => Task.FromResult(1)));
+                p.WithTailProcessee(new TailProcessee<int>((i) => Task.FromResult(1)));
+                p.AddWorkItem(1);
+
+                await p.BeginAsync();
+                condition = true;
+            };
         }
     }
 }

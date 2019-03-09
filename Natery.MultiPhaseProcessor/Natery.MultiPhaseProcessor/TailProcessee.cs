@@ -1,18 +1,18 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Threading.Tasks;
 
 namespace Natery.MultiPhaseProcessor
 {
     public class TailProcessee<TInput> : ITailProcessee, IProcessee<TInput>
     {
-        internal Queue<TInput> _queue;
+        internal ConcurrentQueue<TInput> _queue;
         internal bool _moreWorkToAdd;
         internal Func<TInput, Task> _action;
 
         public TailProcessee(Func<TInput, Task> action)
         {
-            _queue = new Queue<TInput>();
+            _queue = new ConcurrentQueue<TInput>();
             _moreWorkToAdd = true;
             _action = action;
         }
@@ -24,12 +24,15 @@ namespace Natery.MultiPhaseProcessor
 
         private async Task Executor()
         {
-            while (_queue.Count > 0 || _moreWorkToAdd)
+            TInput input = default;
+            while (_moreWorkToAdd || _queue.TryDequeue(out input))
             {
-                if (_queue.Count > 0)
-                    await _action(_queue.Dequeue());
+                if (input != default)
+                    await _action(input);
                 else
                     await Task.Delay(100);
+
+                input = default;
             }
         }
 
