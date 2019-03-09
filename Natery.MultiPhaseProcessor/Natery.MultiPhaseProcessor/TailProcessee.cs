@@ -27,7 +27,7 @@ namespace Natery.MultiPhaseProcessor
             TInput input = default(TInput);
             while (_moreWorkToAdd || _queue.TryDequeue(out input))
             {
-                if (input != null || !input.Equals(default(TInput)))
+                if (!(input == null || input.Equals(default(TInput))))
                     await _action(input);
                 else
                     await Task.Delay(100);
