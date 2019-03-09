@@ -32,10 +32,10 @@ namespace Natery.MultiPhaseProcessor
         {
             int progress = 0;
 
-            TInput input = default;
+            TInput input = default(TInput);
             while (_moreWorkToAdd || _queue.TryDequeue(out input))
             {
-                if (input != default)
+                if (!input.Equals(default(TInput)))
                 {
                     var output = await _action(input);
                     _next.AddWorkItem(output);
@@ -44,7 +44,7 @@ namespace Natery.MultiPhaseProcessor
                 else
                     await Task.Delay(100);
 
-                input = default;
+                input = default(TInput);
             }
 
             //Need to wait for all items to complete

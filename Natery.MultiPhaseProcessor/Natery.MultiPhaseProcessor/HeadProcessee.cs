@@ -42,15 +42,15 @@ namespace Natery.MultiPhaseProcessor
         {
             int progress = 0;
 
-            TInput input = default;
+            TInput input = default(TInput);
             while (_queue.TryDequeue(out input))
             {
-                if (input != default)
+                if (!input.Equals(default(TInput)))
                 {
                     var output = await _action(input);
                     _next.AddWorkItem(output);
                     progress++;
-                    input = default;
+                    input = default(TInput);
                 }
             }
 

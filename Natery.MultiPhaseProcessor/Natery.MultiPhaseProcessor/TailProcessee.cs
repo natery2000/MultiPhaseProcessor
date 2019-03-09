@@ -24,15 +24,15 @@ namespace Natery.MultiPhaseProcessor
 
         private async Task Executor()
         {
-            TInput input = default;
+            TInput input = default(TInput);
             while (_moreWorkToAdd || _queue.TryDequeue(out input))
             {
-                if (input != default)
+                if (!input.Equals(default(TInput)))
                     await _action(input);
                 else
                     await Task.Delay(100);
 
-                input = default;
+                input = default(TInput);
             }
         }
 
