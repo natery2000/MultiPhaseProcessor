@@ -31,6 +31,16 @@ namespace Natery.MultiPhaseProcessor
             _queue.Enqueue(workItem);
         }
 
+        public void AddNext(INonHeadProcessee processee)
+        {
+            _next = (IProcessee<TOutput>)processee;
+        }
+
+        public void AddWorkItem(TInput workItem)
+        {
+            _queue.Enqueue(workItem);
+        }
+
         public async Task BeginProcessingAsync()
         {
             _count = _queue.Count;

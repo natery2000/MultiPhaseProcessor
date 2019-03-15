@@ -44,6 +44,8 @@ namespace Natery.MultiPhaseProcessor
                 }
                 else
                     await Task.Delay(100);
+
+                input = default(TInput);
             }
         }
 
