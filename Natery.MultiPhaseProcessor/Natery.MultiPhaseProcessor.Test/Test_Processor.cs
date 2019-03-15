@@ -11,7 +11,44 @@ namespace Natery.MultiPhaseProcessor.Test
     public class Test_Processor
     {
         [TestMethod]
-        public async Task Processor_FullData_Processees_Works()
+        public async Task Processor_FullData_Processees_SingleThreaded_Works()
+        {
+            var processor = new Processor<string>();
+
+            var list = new List<string>();
+
+            Func<string, Task<string>> first = async (i) =>
+            {
+                list.Add(i);
+                return await Task.FromResult((int.Parse(i) + 1).ToString());
+            };
+
+            Func<string, Task<string>> second = async (i) =>
+            {
+                list.Add(i);
+                return await Task.FromResult((int.Parse(i) + 1).ToString());
+            };
+
+            Func<string, Task> third = (i) =>
+            {
+                list.Add(i);
+                return Task.CompletedTask;
+            };
+
+            processor
+                .WithHeadProcessee(new HeadProcessee<string, string>(first, 1))
+                .WithProcessee(new Processee<string, string>(second, 1))
+                .WithTailProcessee(new TailProcessee<string>(third, 1));
+
+            processor.AddWorkItems(new[] { "10", "20", "30" });
+
+            await processor.BeginAsync();
+
+            CollectionAssert.AreEqual(new string[] { "10", "20", "30", "11", "21", "31", "12", "22", "32" }, list);
+        }
+
+        [TestMethod]
+        public async Task Processor_FullData_Processees_MultiThreaded_Works()
         {
             var processor = new Processor<string>();
 
@@ -44,7 +81,7 @@ namespace Natery.MultiPhaseProcessor.Test
 
             await processor.BeginAsync();
 
-            CollectionAssert.AreEqual(new string[] { "10", "20", "30", "11", "21", "31", "12", "22", "32" }, list);
+            CollectionAssert.AreEquivalent(new string[] { "10", "11", "12", "20", "21", "22", "30", "31", "32" }, list);
         }
 
         [TestMethod]
