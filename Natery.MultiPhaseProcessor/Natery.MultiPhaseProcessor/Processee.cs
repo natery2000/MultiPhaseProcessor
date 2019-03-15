@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Natery.MultiPhaseProcessor
 {
@@ -10,13 +12,15 @@ namespace Natery.MultiPhaseProcessor
         internal ConcurrentQueue<TInput> _queue;
         internal bool _moreWorkToAdd;
         internal Func<TInput, Task<TOutput>> _action;
+        internal int _maxDegreesOfParallelism;
         internal int _count = 0;
 
-        public Processee(Func<TInput, Task<TOutput>> action)
+        public Processee(Func<TInput, Task<TOutput>> action, int maxDegreesOfParallelism = 10)
         {
             _queue = new ConcurrentQueue<TInput>();
             _moreWorkToAdd = true;
             _action = action;
+            _maxDegreesOfParallelism = maxDegreesOfParallelism;
         }
 
         public async Task BeginProcessingAsync()
@@ -32,24 +36,30 @@ namespace Natery.MultiPhaseProcessor
         {
             int progress = 0;
 
+            var actionBlock = new ActionBlock<TInput>(
+            actionInput =>
+            {
+                var output = _action(actionInput).Result;
+                _next.AddWorkItem(output);
+                progress++;
+            }, new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = _maxDegreesOfParallelism });
+
             TInput input = default(TInput);
             while (_moreWorkToAdd || _queue.TryDequeue(out input))
             {
                 if (!(input == null || input.Equals(default(TInput))))
                 {
-                    var output = await _action(input);
-                    _next.AddWorkItem(output);
-                    progress++;
+                    actionBlock.Post(input);
+
+                    input = default(TInput);
                 }
                 else
                     await Task.Delay(100);
 
-                input = default(TInput);
             }
 
             //Need to wait for all items to complete
-            //Needed when multi-threadin is implemented
-            //while (progress < _count) { await Task.Delay(100); }
+            while (progress < _count) { Thread.Sleep(100); }
 
             ((INonHeadProcessee)_next).NoMoreWorkToAdd();
         }

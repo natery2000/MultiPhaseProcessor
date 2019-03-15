@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Threading;
 using System.Threading.Tasks;
+using System.Threading.Tasks.Dataflow;
 
 namespace Natery.MultiPhaseProcessor
 {
@@ -9,12 +11,14 @@ namespace Natery.MultiPhaseProcessor
         internal IProcessee<TOutput> _next;
         internal ConcurrentQueue<TInput> _queue;
         internal Func<TInput, Task<TOutput>> _action;
+        internal int _maxDegreesOfParallelism;
         internal int _count;
 
-        public HeadProcessee(Func<TInput, Task<TOutput>> action)
+        public HeadProcessee(Func<TInput, Task<TOutput>> action, int maxDegreesOfParallelism = 10)
         {
             _queue = new ConcurrentQueue<TInput>();
             _action = action;
+            _maxDegreesOfParallelism = maxDegreesOfParallelism;
         }
 
         public void AddNext(INonHeadProcessee processee)
@@ -33,30 +37,36 @@ namespace Natery.MultiPhaseProcessor
 
             var nextProcessing = _next.BeginProcessingAsync();
 
-            var currentProcessing = Executor();
+            Executor();
 
-            await Task.WhenAll(nextProcessing, currentProcessing);
+            await Task.WhenAll(nextProcessing);
         }
 
-        private async Task Executor()
+        private void Executor()
         {
             int progress = 0;
+
+            var actionBlock = new ActionBlock<TInput>(
+            actionInput =>
+            {
+                var output = _action(actionInput).Result;
+                _next.AddWorkItem(output);
+                progress++;
+            }, new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = _maxDegreesOfParallelism });
 
             TInput input = default(TInput);
             while (_queue.TryDequeue(out input))
             {
                 if (!(input == null || input.Equals(default(TInput))))
                 {
-                    var output = await _action(input);
-                    _next.AddWorkItem(output);
-                    progress++;
+                    actionBlock.Post(input);
+                    
                     input = default(TInput);
                 }
             }
 
             //Need to wait for all items to complete
-            //Needed when multi-threading is implemented
-            //while (progress < _count) { await Task.Delay(100); }
+            while (progress < _count) { Thread.Sleep(100); }
 
             ((INonHeadProcessee)_next).NoMoreWorkToAdd();
         }
