@@ -47,6 +47,8 @@ namespace Natery.MultiPhaseProcessor
 
                 input = default(TInput);
             }
+            actionBlock.Complete();
+            await actionBlock.Completion;
         }
 
         public void AddWorkItem(TInput workItem)

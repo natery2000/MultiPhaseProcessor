@@ -36,9 +36,9 @@ namespace Natery.MultiPhaseProcessor.Test
             };
 
             processor
-                .WithHeadProcessee(new HeadProcessee<string, string>(first, 1))
-                .WithProcessee(new Processee<string, string>(second, 1))
-                .WithTailProcessee(new TailProcessee<string>(third, 1));
+                .WithHeadProcessee<string>(first, 1)
+                .WithProcessee<string, string>(second, 1)
+                .WithTailProcessee<string>(third, 1);
 
             processor.AddWorkItems(new[] { "10", "20", "30" });
 
@@ -73,9 +73,9 @@ namespace Natery.MultiPhaseProcessor.Test
             };
 
             processor
-                .WithHeadProcessee(new HeadProcessee<string, string>(first))
-                .WithProcessee(new Processee<string, string>(second))
-                .WithTailProcessee(new TailProcessee<string>(third));
+                .WithHeadProcessee<string>(first)
+                .WithProcessee<string, string>(second)
+                .WithTailProcessee<string>(third);
 
             processor.AddWorkItems(new[] { "10", "20", "30" });
 
@@ -89,8 +89,8 @@ namespace Natery.MultiPhaseProcessor.Test
         public void Proccessor_AddNullHead_Exception()
         {
             var p = new Processor<int>();
-            p.WithHeadProcessee(new HeadProcessee<int, int>((int i) => Task.FromResult(1)));
-            p.WithHeadProcessee(new HeadProcessee<int, int>((int i) => Task.FromResult(1)));
+            p.WithHeadProcessee<int>((int i) => Task.FromResult(1));
+            p.WithHeadProcessee<int>((int i) => Task.FromResult(1));
         }
 
         //#14: Value types fail because of 'default' keyword for queue usage
@@ -109,8 +109,8 @@ namespace Natery.MultiPhaseProcessor.Test
             async Task TestFunction()
             {
                 var p = new Processor<int>();
-                p.WithHeadProcessee(new HeadProcessee<int, int>((i) => Task.FromResult(1)));
-                p.WithTailProcessee(new TailProcessee<int>((i) => Task.FromResult(1)));
+                p.WithHeadProcessee<int>((i) => Task.FromResult(1));
+                p.WithTailProcessee<int>((i) => Task.FromResult(1));
                 p.AddWorkItem(1);
 
                 await p.BeginAsync();

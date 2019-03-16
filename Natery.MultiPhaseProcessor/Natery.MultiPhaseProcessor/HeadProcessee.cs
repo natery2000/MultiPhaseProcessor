@@ -38,12 +38,12 @@ namespace Natery.MultiPhaseProcessor
 
             var nextProcessing = _next.BeginProcessingAsync();
 
-            Executor();
+            var executor = Executor();
 
-            await Task.WhenAll(nextProcessing);
+            await Task.WhenAll(executor, nextProcessing);
         }
 
-        private void Executor()
+        private async Task Executor()
         {
             int progress = 0;
 
@@ -58,8 +58,8 @@ namespace Natery.MultiPhaseProcessor
             while (_queue.TryDequeue(out var input))
                 actionBlock.Post(input);
 
-            //Need to wait for all items to complete
-            while (progress < _count) { Thread.Sleep(100); }
+            actionBlock.Complete();
+            await actionBlock.Completion;
 
             ((INonHeadProcessee)_next).NoMoreWorkToAdd();
         }

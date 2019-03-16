@@ -57,9 +57,8 @@ namespace Natery.MultiPhaseProcessor
                     await Task.Delay(100);
 
             }
-
-            //Need to wait for all items to complete
-            while (progress < _count) { Thread.Sleep(100); }
+            actionBlock.Complete();
+            await actionBlock.Completion;
 
             ((INonHeadProcessee)_next).NoMoreWorkToAdd();
         }
