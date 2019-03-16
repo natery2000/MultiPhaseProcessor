@@ -5,14 +5,14 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Natery.MultiPhaseProcessor
 {
-    public class TailProcessee<TInput> : ITailProcessee, IProcessee<TInput>
+    internal class TailProcessee<TInput> : ITailProcessee, IProcessee<TInput>
     {
         internal ConcurrentQueue<TInput> _queue;
         internal bool _moreWorkToAdd;
         internal Func<TInput, Task> _action;
         internal int _maxDegreesOfParallelism;
 
-        public TailProcessee(Func<TInput, Task> action, int maxDegreesOfParallelism = 10)
+        internal TailProcessee(Func<TInput, Task> action, int maxDegreesOfParallelism = 10)
         {
             _queue = new ConcurrentQueue<TInput>();
             _moreWorkToAdd = true;
@@ -23,6 +23,16 @@ namespace Natery.MultiPhaseProcessor
         public async Task BeginProcessingAsync()
         {
             await Executor();
+        }
+
+        public void AddWorkItem(TInput workItem)
+        {
+            _queue.Enqueue(workItem);
+        }
+
+        public void NoMoreWorkToAdd()
+        {
+            _moreWorkToAdd = false;
         }
 
         private async Task Executor()
@@ -49,16 +59,6 @@ namespace Natery.MultiPhaseProcessor
             }
             actionBlock.Complete();
             await actionBlock.Completion;
-        }
-
-        public void AddWorkItem(TInput workItem)
-        {
-            _queue.Enqueue(workItem);
-        }
-
-        public void NoMoreWorkToAdd()
-        {
-            _moreWorkToAdd = false;
         }
     }
 }
