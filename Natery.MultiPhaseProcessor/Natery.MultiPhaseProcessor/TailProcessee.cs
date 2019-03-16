@@ -38,7 +38,7 @@ namespace Natery.MultiPhaseProcessor
             {
                 if (!(input == null || input.Equals(default(TInput))))
                 {
-                    await _action(input);
+                    actionBlock.Post(input);
 
                     input = default(TInput);
                 }

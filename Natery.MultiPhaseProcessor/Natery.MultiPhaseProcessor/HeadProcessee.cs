@@ -55,16 +55,8 @@ namespace Natery.MultiPhaseProcessor
                 progress++;
             }, new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = _maxDegreesOfParallelism });
 
-            TInput input = default(TInput);
-            while (_queue.TryDequeue(out input))
-            {
-                if (!(input == null || input.Equals(default(TInput))))
-                {
-                    actionBlock.Post(input);
-                    
-                    input = default(TInput);
-                }
-            }
+            while (_queue.TryDequeue(out var input))
+                actionBlock.Post(input);
 
             //Need to wait for all items to complete
             while (progress < _count) { Thread.Sleep(100); }
