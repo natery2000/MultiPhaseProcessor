@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace Natery.MultiPhaseProcessor
 {
-    public class HeadProcessee<TInput, TOutput> : IHeadProcessee<TInput>, IProcessee<TInput, TOutput>
+    internal class HeadProcessee<TInput, TOutput> : IHeadProcessee<TInput>, IProcessee<TInput, TOutput>
     {
         internal IProcessee<TOutput> _next;
         internal ConcurrentQueue<TInput> _queue;
@@ -14,7 +13,7 @@ namespace Natery.MultiPhaseProcessor
         internal int _maxDegreesOfParallelism;
         internal int _count;
 
-        public HeadProcessee(Func<TInput, Task<TOutput>> action, int maxDegreesOfParallelism = 10)
+        internal HeadProcessee(Func<TInput, Task<TOutput>> action, int maxDegreesOfParallelism = 10)
         {
             _queue = new ConcurrentQueue<TInput>();
             _action = action;

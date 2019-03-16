@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Dataflow;
 
 namespace Natery.MultiPhaseProcessor
 {
-    public class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>, IProcesseeWithNext<TInput>, INonHeadProcessee
+    internal class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>, IProcesseeWithNext<TInput>, INonHeadProcessee
     {
         internal IProcessee<TOutput> _next;
         internal ConcurrentQueue<TInput> _queue;
@@ -15,12 +14,17 @@ namespace Natery.MultiPhaseProcessor
         internal int _maxDegreesOfParallelism;
         internal int _count = 0;
 
-        public Processee(Func<TInput, Task<TOutput>> action, int maxDegreesOfParallelism = 10)
+        internal Processee(Func<TInput, Task<TOutput>> action, int maxDegreesOfParallelism = 10)
         {
             _queue = new ConcurrentQueue<TInput>();
             _moreWorkToAdd = true;
             _action = action;
             _maxDegreesOfParallelism = maxDegreesOfParallelism;
+        }
+
+        public void AddNext(INonHeadProcessee processee)
+        {
+            _next = (IProcessee<TOutput>)processee;
         }
 
         public async Task BeginProcessingAsync()
@@ -30,6 +34,17 @@ namespace Natery.MultiPhaseProcessor
             var currentProcessing = Executor();
 
             await Task.WhenAll(nextProcessing, currentProcessing);
+        }
+
+        public void AddWorkItem(TInput workItem)
+        {
+            _count++;
+            _queue.Enqueue(workItem);
+        }
+
+        public void NoMoreWorkToAdd()
+        {
+            _moreWorkToAdd = false;
         }
 
         private async Task Executor()
@@ -61,22 +76,6 @@ namespace Natery.MultiPhaseProcessor
             await actionBlock.Completion;
 
             ((INonHeadProcessee)_next).NoMoreWorkToAdd();
-        }
-
-        public void AddWorkItem(TInput workItem)
-        {
-            _count++;
-            _queue.Enqueue(workItem);
-        }
-
-        public void NoMoreWorkToAdd()
-        {
-            _moreWorkToAdd = false;
-        }
-
-        public void AddNext(INonHeadProcessee processee)
-        {
-            _next = (IProcessee<TOutput>)processee;
         }
     }
 }
