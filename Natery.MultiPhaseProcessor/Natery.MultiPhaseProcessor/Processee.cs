@@ -7,7 +7,7 @@ namespace Natery.MultiPhaseProcessor
 {
     internal class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>
     {
-        internal IProcessee _next;
+        internal IProcesseeWithInput<TOutput> _next;
         internal ConcurrentQueue<TInput> _queue;
         internal bool _moreWorkToAdd;
         internal Func<TInput, Task<TOutput>> _action;
@@ -22,7 +22,7 @@ namespace Natery.MultiPhaseProcessor
             _maxDegreesOfParallelism = maxDegreesOfParallelism;
         }
 
-        public void AddNext(IProcessee processee)
+        public void AddNext(IProcesseeWithInput<TOutput> processee)
         {
             _next = processee;
         }
@@ -56,7 +56,7 @@ namespace Natery.MultiPhaseProcessor
             {
                 var output = _action(actionInput).Result;
                 if (_next != null)
-                    ((IProcessee<TOutput>)_next).AddWorkItem(output);
+                    _next.AddWorkItem(output);
 
                 progress++;
             }, new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = _maxDegreesOfParallelism });

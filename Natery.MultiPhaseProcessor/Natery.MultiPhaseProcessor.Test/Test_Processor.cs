@@ -83,6 +83,14 @@ namespace Natery.MultiPhaseProcessor.Test
             CollectionAssert.AreEquivalent(new string[] { "10", "11", "12", "20", "21", "22", "30", "31", "32" }, list);
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentException))]
+        public void Processor_InvalidHeadProcessee_ThrowsException()
+        {
+            var p = new Processor<string>();
+            p.WithProcessee<int, int>((i) => Task.FromResult(1));
+        }
+
         //#14: Value types fail because of 'default' keyword for queue usage
         [Ignore]
         [TestMethod]
