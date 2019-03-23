@@ -30,7 +30,7 @@ namespace Natery.MultiPhaseProcessor
 
         public void AddWorkItem(TInput workItem)
         {
-            _head.AddWorkItem(workItem);
+            _head.AddWorkItem(new WorkItem<TInput>(workItem));
         }
 
         public void AddWorkItems(IEnumerable<TInput> workItems)

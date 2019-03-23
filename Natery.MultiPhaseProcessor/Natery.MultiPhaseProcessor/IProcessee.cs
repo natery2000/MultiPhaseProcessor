@@ -8,7 +8,7 @@ namespace Natery.MultiPhaseProcessor
 
     internal interface IProcesseeWithInput<TInput> : IProcessee
     {
-        void AddWorkItem(TInput workItem);
+        void AddWorkItem(WorkItem<TInput> workItem);
     }
 
     internal interface IProcesseeWithOutput<TOutput> : IProcessee
