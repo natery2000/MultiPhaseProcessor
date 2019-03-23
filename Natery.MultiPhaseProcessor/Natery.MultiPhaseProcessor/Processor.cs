@@ -6,43 +6,22 @@ namespace Natery.MultiPhaseProcessor
 {
     public class Processor<TInput>
     {
-        internal IHeadProcessee<TInput> _head;
-        internal ITailProcessee _tail;
-        internal IProcesseeWithNext _lastAdded;
+        internal IProcessee<TInput> _head;
+        internal IProcessee _lastAdded;
 
         public Processor() { }
-
-        public Processor<TInput> WithHeadProcessee<TProcesseeOutput>(
-            Func<TInput, Task<TProcesseeOutput>> action, 
-            int maxDegreesOfParallelism = 10)
-        {
-            if (_lastAdded != null) throw new Exception();
-
-            var headProcessee = new HeadProcessee<TInput, TProcesseeOutput>(action, maxDegreesOfParallelism);
-            _head = headProcessee;
-            _lastAdded = headProcessee;
-
-            return this;
-        }
 
         public Processor<TInput> WithProcessee<TProcesseeInput, TProcesseeOutput>(
             Func<TProcesseeInput, Task<TProcesseeOutput>> action, 
             int maxDegreesOfParallelism = 10)
         {
             var processee = new Processee<TProcesseeInput, TProcesseeOutput>(action, maxDegreesOfParallelism);
-            _lastAdded.AddNext(processee);
-            _lastAdded = (IProcesseeWithNext)processee;
-
-            return this;
-        }
-
-        public Processor<TInput> WithTailProcessee<TProcesseeInput>(
-            Func<TProcesseeInput, Task> action, 
-            int maxDegreesOfParallelism = 10)
-        {
-            var tailProcessee = new TailProcessee<TProcesseeInput>(action, maxDegreesOfParallelism);
-            _lastAdded.AddNext(tailProcessee);
-            _tail = tailProcessee;
+            if (_lastAdded == null)
+                _head = (IProcessee<TInput>)processee;
+            else
+                _lastAdded.AddNext(processee);
+            
+            _lastAdded = processee;
 
             return this;
         }
@@ -59,6 +38,7 @@ namespace Natery.MultiPhaseProcessor
 
         public async Task BeginAsync()
         {
+            _head.NoMoreWorkToAdd();
             await _head.BeginProcessingAsync();
         }
     }

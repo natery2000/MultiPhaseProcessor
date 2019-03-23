@@ -5,9 +5,9 @@ using System.Threading.Tasks.Dataflow;
 
 namespace Natery.MultiPhaseProcessor
 {
-    internal class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>, IProcesseeWithNext<TInput>, INonHeadProcessee
+    internal class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>
     {
-        internal IProcessee<TOutput> _next;
+        internal IProcessee _next;
         internal ConcurrentQueue<TInput> _queue;
         internal bool _moreWorkToAdd;
         internal Func<TInput, Task<TOutput>> _action;
@@ -22,14 +22,14 @@ namespace Natery.MultiPhaseProcessor
             _maxDegreesOfParallelism = maxDegreesOfParallelism;
         }
 
-        public void AddNext(INonHeadProcessee processee)
+        public void AddNext(IProcessee processee)
         {
-            _next = (IProcessee<TOutput>)processee;
+            _next = processee;
         }
 
         public async Task BeginProcessingAsync()
         {
-            var nextProcessing = _next.BeginProcessingAsync();
+            var nextProcessing =  _next?.BeginProcessingAsync() ?? Task.CompletedTask;
 
             var currentProcessing = Executor();
 
@@ -55,7 +55,9 @@ namespace Natery.MultiPhaseProcessor
             actionInput =>
             {
                 var output = _action(actionInput).Result;
-                _next.AddWorkItem(output);
+                if (_next != null)
+                    ((IProcessee<TOutput>)_next).AddWorkItem(output);
+
                 progress++;
             }, new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = _maxDegreesOfParallelism });
 
@@ -75,7 +77,8 @@ namespace Natery.MultiPhaseProcessor
             actionBlock.Complete();
             await actionBlock.Completion;
 
-            ((INonHeadProcessee)_next).NoMoreWorkToAdd();
+            if (_next != null)
+                _next.NoMoreWorkToAdd();
         }
     }
 }

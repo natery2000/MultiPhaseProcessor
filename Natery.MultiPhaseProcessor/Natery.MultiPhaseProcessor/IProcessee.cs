@@ -6,29 +6,15 @@ namespace Natery.MultiPhaseProcessor
     {
     }
 
-    internal interface IProcessee<TInput>
+    internal interface IProcessee<TInput> : IProcessee
     {
         void AddWorkItem(TInput workItem);
-        Task BeginProcessingAsync();
     }
 
-    internal interface INonHeadProcessee
+    internal interface IProcessee
     {
+        void AddNext(IProcessee processee);
+        Task BeginProcessingAsync();
         void NoMoreWorkToAdd();
     }
-
-    internal interface IProcesseeWithNext<TInput> : IProcesseeWithNext, IProcessee<TInput>
-    {
-    }
-
-    internal interface IProcesseeWithNext
-    {
-        void AddNext(INonHeadProcessee processee);
-    }
-
-    internal interface IHeadProcessee<TInput> : IProcesseeWithNext<TInput>
-    {
-    }
-
-    internal interface ITailProcessee : INonHeadProcessee { }
 }
