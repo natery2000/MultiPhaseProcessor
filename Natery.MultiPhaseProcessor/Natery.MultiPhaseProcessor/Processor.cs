@@ -6,10 +6,8 @@ namespace Natery.MultiPhaseProcessor
 {
     public class Processor<TInput>
     {
-        internal IProcessee<TInput> _head;
+        internal IProcesseeWithInput<TInput> _head;
         internal IProcessee _lastAdded;
-
-        public Processor() { }
 
         public Processor<TInput> WithProcessee<TProcesseeInput, TProcesseeOutput>(
             Func<TProcesseeInput, Task<TProcesseeOutput>> action, 
@@ -17,9 +15,13 @@ namespace Natery.MultiPhaseProcessor
         {
             var processee = new Processee<TProcesseeInput, TProcesseeOutput>(action, maxDegreesOfParallelism);
             if (_lastAdded == null)
-                _head = (IProcessee<TInput>)processee;
+            {
+                if (!typeof(TInput).IsAssignableFrom(typeof(TProcesseeInput)))
+                    throw new ArgumentException($"Processee function contains invalid input type parameter for the Processor");
+                _head = (IProcesseeWithInput<TInput>)processee;
+            }
             else
-                _lastAdded.AddNext(processee);
+                ((IProcesseeWithOutput<TProcesseeInput>)_lastAdded).AddNext(processee);
             
             _lastAdded = processee;
 
