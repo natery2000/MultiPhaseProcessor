@@ -8,7 +8,7 @@ namespace Natery.MultiPhaseProcessor
     internal class Processee<TInput, TOutput> : IProcessee<TInput, TOutput>
     {
         internal IProcesseeWithInput<TOutput> _next;
-        internal ConcurrentQueue<TInput> _queue;
+        internal ConcurrentQueue<WorkItem<TInput>> _queue;
         internal bool _moreWorkToAdd;
         internal Func<TInput, Task<TOutput>> _action;
         internal int _maxDegreesOfParallelism;
@@ -16,7 +16,7 @@ namespace Natery.MultiPhaseProcessor
 
         internal Processee(Func<TInput, Task<TOutput>> action, int maxDegreesOfParallelism = 10)
         {
-            _queue = new ConcurrentQueue<TInput>();
+            _queue = new ConcurrentQueue<WorkItem<TInput>>();
             _moreWorkToAdd = true;
             _action = action;
             _maxDegreesOfParallelism = maxDegreesOfParallelism;
@@ -36,7 +36,7 @@ namespace Natery.MultiPhaseProcessor
             await Task.WhenAll(nextProcessing, currentProcessing);
         }
 
-        public void AddWorkItem(TInput workItem)
+        public void AddWorkItem(WorkItem<TInput> workItem)
         {
             _count++;
             _queue.Enqueue(workItem);
@@ -56,19 +56,19 @@ namespace Natery.MultiPhaseProcessor
             {
                 var output = _action(actionInput).Result;
                 if (_next != null)
-                    _next.AddWorkItem(output);
+                    _next.AddWorkItem(new WorkItem<TOutput>(output));
 
                 progress++;
             }, new ExecutionDataflowBlockOptions() { MaxDegreeOfParallelism = _maxDegreesOfParallelism });
 
-            TInput input = default(TInput);
+            WorkItem<TInput> input = default(WorkItem<TInput>);
             while (_moreWorkToAdd || _queue.TryDequeue(out input))
             {
                 if (!(input == null || input.Equals(default(TInput))))
                 {
-                    actionBlock.Post(input);
+                    actionBlock.Post(input.Item);
 
-                    input = default(TInput);
+                    input = default(WorkItem<TInput>);
                 }
                 else
                     await Task.Delay(100);

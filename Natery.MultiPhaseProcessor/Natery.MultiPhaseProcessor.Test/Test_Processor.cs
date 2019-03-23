@@ -91,10 +91,8 @@ namespace Natery.MultiPhaseProcessor.Test
             p.WithProcessee<int, int>((i) => Task.FromResult(1));
         }
 
-        //#14: Value types fail because of 'default' keyword for queue usage
-        [Ignore]
         [TestMethod]
-        public void Processor_ValueTypesAsync()
+        public void Processor_ValueTypes()
         {
             var condition = false;
 
